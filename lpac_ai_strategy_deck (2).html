@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI at Vocap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 25%, #E8E8E8 50%, #F0F0F0 100%);
+            color: #21435B;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        .bg-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(32, 86, 111, 0.15);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.2; }
+            50% { transform: translateY(-25px) rotate(180deg); opacity: 0.6; }
+        }
+
+        .slide-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .slide {
+            display: none;
+            width: 92%;
+            max-width: 1300px;
+            height: 85vh;
+            padding: 50px 60px;
+            background: #FFFFFF;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(32, 86, 111, 0.15);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 40px rgba(32, 86, 111, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 1),
+                0 0 0 1px rgba(32, 86, 111, 0.05);
+            animation: slideIn 0.8s ease-out;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: block;
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+        }
+
+        /* Title slide gets special background */
+        .title-slide.active {
+            background: linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 25%, #E8E8E8 25%, #E8E8E8 100%) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Title slide specific styling */
+        .title-box {
+            background: linear-gradient(135deg, #20566F, #21435B);
+            padding: 60px 120px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(32, 86, 111, 0.3);
+            position: relative;
+            z-index: 10;
+        }
+
+        .title-box h1 {
+            color: #FFFFFF !important;
+            background: none !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            margin-bottom: 0;
+        }
+
+        .title-box h1::after {
+            display: none;
+        }
+
+        /* Stream distinction styling */
+        .stream-now {
+            background: linear-gradient(135deg, #20566F, #21435B);
+            color: #FFFFFF;
+            border: 3px solid #20566F;
+            position: relative;
+        }
+
+        .stream-now::before {
+            content: 'NOW';
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: #20566F;
+            color: #FFFFFF;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .stream-future {
+            background: linear-gradient(135deg, rgba(232, 232, 232, 0.9), rgba(255, 255, 255, 0.9));
+            color: #21435B;
+            border: 3px solid #E8E8E8;
+            position: relative;
+        }
+
+        .stream-future::before {
+            content: 'FUTURE';
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: #E8E8E8;
+            color: #21435B;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        /* Typography with Vocap colors */
+        .slide h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #20566F 0%, #21435B 50%, #20566F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        .slide h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #20566F, transparent);
+            border-radius: 2px;
+        }
+
+        .slide h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #20566F 0%, #21435B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: -0.01em;
+        }
+
+        .slide h3 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #20566F;
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .slide h3::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 28px;
+            background: linear-gradient(135deg, #20566F, #21435B);
+            border-radius: 3px;
+            box-shadow: 0 2px 8px rgba(32, 86, 111, 0.3);
+        }
+
+        .slide p, .slide li {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #21435B;
+            margin-bottom: 16px;
+        }
+
+        .slide ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .slide li {
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .slide li:hover {
+            transform: translateX(5px);
+        }
+
+        .slide li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #20566F;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        /* Two column layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: start;
+        }
+
+        /* Enhanced demo cards */
+        .demo-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(232, 232, 232, 0.4));
+            border: 2px solid rgba(32, 86, 111, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(32, 86, 111, 0.1);
+        }
+
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .demo-table th {
+            background: linear-gradient(135deg, #20566F, #21435B);
+            color: #FFFFFF;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(32, 86, 111, 0.3);
+        }
+
+        .demo-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(32, 86, 111, 0.1);
+            vertical-align: top;
+        }
+
+        .demo-table tr:nth-child(even) {
+            background: rgba(232, 232, 232, 0.3);
+        }
+
+        .demo-table tr:hover {
+            background: rgba(32, 86, 111, 0.05);
+        }
+
+        .before-after {
+            font-weight: 600;
+            color: #20566F;
+            font-size: 1.1rem;
+        }
+
+        .stat-highlight {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #20566F, #21435B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tools-list {
+            font-style: italic;
+            color: #21435B;
+        }
+
+        /* Placeholder slides */
+        .placeholder-slide {
+            text-align: center;
+            padding: 100px 40px;
+            background: linear-gradient(135deg, #20566F, #21435B);
+            color: #FFFFFF;
+            border-radius: 20px;
+            margin: 40px 0;
+        }
+
+        .placeholder-slide h3 {
+            color: #FFFFFF;
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        .placeholder-slide p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        /* Priorities section */
+        .priorities-section {
+            margin: 30px 0;
+        }
+
+        .priority-header {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #20566F;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vision-section {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(232, 232, 232, 0.4));
+            border: 2px solid rgba(32, 86, 111, 0.2);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        /* Enhanced navigation */
+        .navigation {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(232, 232, 232, 0.8));
+            border: 2px solid rgba(32, 86, 111, 0.3);
+            border-radius: 25px;
+            color: #20566F;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 0.95rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(32, 86, 111, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-btn:hover::before {
+            left: 100%;
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(135deg, #20566F, #21435B);
+            color: #FFFFFF;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(32, 86, 111, 0.3);
+            border-color: rgba(32, 86, 111, 0.6);
+        }
+
+        /* Enhanced progress bar */
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #20566F, #21435B);
+            transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border-radius: 0 0 2px 2px;
+            box-shadow: 0 2px 8px rgba(32, 86, 111, 0.4);
+        }
+
+        .slide-counter {
+            position: absolute;
+            top: 35px;
+            right: 35px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(232, 232, 232, 0.8));
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #21435B;
+            border: 1px solid rgba(32, 86, 111, 0.2);
+            font-weight: 600;
+        }
+
+        /* Vocap logo integration */
+        .vocap-logo {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #20566F, #21435B);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-weight: 800;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(32, 86, 111, 0.3);
+        }
+
+        /* Vocap branding */
+        .vocap-brand {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            font-size: 0.8rem;
+            color: rgba(33, 67, 91, 0.6);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .slide {
+                padding: 40px 45px;
+                height: 90vh;
+            }
+            
+            .slide h1 {
+                font-size: 3rem;
+            }
+            
+            .slide h2 {
+                font-size: 2.2rem;
+            }
+            
+            .two-column {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="bg-particles" id="particles"></div>
+
+    <div class="slide-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="slide-counter" id="slideCounter">1 / 9</div>
+        <div class="vocap-logo">VP</div>
+
+        <!-- Slide 1: AI at Vocap -->
+        <div class="slide active title-slide">
+            <div class="title-box">
+                <h1>AI at Vocap</h1>
+            </div>
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+
+        <!-- Slide 2: AI has reached an inflection point -->
+        <div class="slide">
+            <h2>AI has reached an inflection point</h2>
+            <div style="margin: 80px 0; text-align: left;">
+                <ul style="font-size: 1.4rem; line-height: 2;">
+                    <li>Competitive advantage</li>
+                    <li>Use it better than the competition</li>
+                    <li>Leverage as a force multiplier</li>
+                </ul>
+            </div>
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+
+        <!-- Slide 3: Surface more opportunities & make informed decisions in less time -->
+        <div class="slide">
+            <h2>Surface more opportunities & make informed decisions in less time</h2>
+            <div class="two-column" style="margin-top: 40px;">
+                <div>
+                    <div class="stream-now" style="padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+                        <h3 style="color: #FFFFFF; padding-left: 0;">Portco Journey</h3>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(32, 86, 111, 0.2); padding: 30px; border-radius: 12px;">
+                        <ul style="font-size: 1.3rem; line-height: 1.8;">
+                            <li>Strategy & Market Mapping</li>
+                            <li>Sourcing</li>
+                            <li>Qualification & Screening</li>
+                            <li>Diligence</li>
+                            <li>Deal Structuring & Negotiation</li>
+                            <li>Post-Investment Support</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <div class="stream-future" style="padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+                        <h3 style="color: #21435B; padding-left: 0;">Internal Ops</h3>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(32, 86, 111, 0.2); padding: 30px; border-radius: 12px;">
+                        <ul style="font-size: 1.3rem; line-height: 1.8;">
+                            <li>Fund Administration & Accounting</li>
+                            <li>Compliance & Legal</li>
+                            <li>Investor Relations & Reporting</li>
+                            <li>HR</li>
+                            <li>Fundraising Support & Investor Onboarding</li>
+                            <li>Marketing & PR</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+
+        <!-- Slide 4: Manual Matchmaking to Instant Distribution using AI -->
+        <div class="slide">
+            <h2>Manual Matchmaking to Instant Distribution using AI</h2>
+            <div class="demo-card">
+                <table class="demo-table">
+                    <thead>
+                        <tr>
+                            <th>How we operate</th>
+                            <th>Specific Tools</th>
+                            <th>Time and Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="before-after">Before</div>
+                                <ul style="margin-top: 10px;">
+                                    <li>Logged company details in CRM</li>
+                                    <li>Manually screened 239 firms for potential fit</li>
+                                    <li>Identified and emailed firms based on memory and CRM search</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <div class="tools-list">Manual Process</div>
+                            </td>
+                            <td>
+                                <div class="stat-highlight">3hr</div>
+                                <div>Manual end-to-end process</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="before-after">After</div>
+                                <ul style="margin-top: 10px;">
+                                    <li>Inputting a company into CRM triggers AI evaluation</li>
+                                    <li>AI screens 239 firms using semantic match</li>
+                                    <li>Top matches selected; personalized emails auto-drafted in Outlook</li>
+                                    <li>Click button and done</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <div class="tools-list">OpenAI, Pinecone, Attio, Make, Outlook</div>
+                            </td>
+                            <td>
+                                <div class="stat-highlight">5 minutes</div>
+                                <div>Faster, more targeted, and fully traceable</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="text-align: center; margin-top: 30px; font-style: italic;">
+                    Our advantage comes from orchestrating the tools around proprietary insights we've built into our CRM over time.
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 5: Placeholder slide (Tradeable workflow demo) -->
+        <div class="slide">
+            <div class="placeholder-slide">
+                <h3>Placeholder slide</h3>
+                <p>Quick video/gif visual demo of the tradeable workflow in action?</p>
+                <p style="margin-top: 20px;">I think it could be good to have something where they can "See" what was discussed in the previous slide.</p>
+            </div>
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+
+        <!-- Slide 6: AI in Diligence - Parsing 72 Customer Contracts -->
+        <div class="slide">
+            <h2>AI in Diligence - Parsing 72 Customer Contracts</h2>
+            <div class="demo-card">
+                <table class="demo-table">
+                    <thead>
+                        <tr>
+                            <th>How we operate</th>
+                            <th>Specific Tools</th>
+                            <th>Time and Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="before-after">Before</div>
+                                <ul style="margin-top: 10px;">
+                                    <li>Read 72, inconsistent customer contracts manually</li>
+                                    <li>Extract key terms (pricing, renewal, product type) by hand</li>
+                                    <li>Calculate ARR in Excel and manually classify revenue by type (Software, Services, Other)</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <div class="tools-list">Manual Process</div>
+                            </td>
+                            <td>
+                                <div class="stat-highlight">30-40hr</div>
+                                <div>end-to-end process</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="before-after">After</div>
+                                <ul style="margin-top: 10px;">
+                                    <li>Engineered prompts to guide OpenAI through complex, varied contract structures</li>
+                                    <li>Parsed pricing terms, contract length, product categorization across dozens of formats</li>
+                                    <li>Output structured data for rapid ARR calculation and analysis in excel</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <div class="tools-list">OpenAI</div>
+                            </td>
+                            <td>
+                                <div class="stat-highlight">2 hours</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="text-align: center; margin-top: 30px; font-style: italic;">
+                    This one-off diligence project shows how tailored prompt engineering can deliver the highest ROI.
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 7: Placeholder slide (Contract analysis demo) -->
+        <div class="slide">
+            <div class="placeholder-slide">
+                <h3>Placeholder slide</h3>
+                <p>Something to see/feel</p>
+            </div>
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+
+        <!-- Slide 8: Turning Our CRM Into an AI Operating System -->
+        <div class="slide">
+            <h2>Turning Our CRM Into an AI Operating System</h2>
+            <div class="demo-card">
+                <table class="demo-table">
+                    <thead>
+                        <tr>
+                            <th>How we operate</th>
+                            <th>Specific Tools</th>
+                            <th>Time and Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="before-after">Before</div>
+                                <ul style="margin-top: 10px;">
+                                    <li>Relied on Salesforce</li>
+                                    <li>Manual entry and updates</li>
+                                    <li>No usable structure for AI</li>
+                                    <li>CRM served as a static record system, not an intelligent one</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <div class="tools-list">Salesforce</div>
+                            </td>
+                            <td>
+                                <div>Slow, manual, limited AI integration</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="before-after">After</div>
+                                <div style="margin-top: 10px;">
+                                    <p><strong>AI capabilities now embedded in our CRM itself</strong></p>
+                                    <p style="margin: 10px 0; font-weight: 600;">AI Attributes:</p>
+                                    <ul>
+                                        <li><strong>Research</strong> – Instantly pull data on people and companies</li>
+                                        <li><strong>Classification</strong> – Bulk-tag records for analysis</li>
+                                        <li><strong>Prompting</strong> – Interact with CRM using natural language</li>
+                                    </ul>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tools-list">Attio + Embedded AI</div>
+                            </td>
+                            <td>
+                                <div>Faster updates, deeper insights, AI-ready infrastructure</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="text-align: center; margin-top: 30px; font-style: italic;">
+                    We now have the power of latest AI tools like SDRs, research agents, and automation built directly into our CRM
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 9: Placeholder slide (Attio AI demo) -->
+        <div class="slide">
+            <div class="placeholder-slide">
+                <h3>Placeholder slide</h3>
+                <p>See site: <span style="text-decoration: underline;">https://attio.com/blog/introducing-ai-attributes</span></p>
+                <p style="margin-top: 20px;">I think an embedded video/gif like on the site above paints a good picture of the "AI in action"...</p>
+                <p style="margin-top: 10px;">Maybe something like that baked in here?</p>
+            </div>
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+
+        <!-- Slide 10: Where We're Going Next -->
+        <div class="slide">
+            <h2>Where We're Going Next</h2>
+            
+            <div class="priorities-section">
+                <div class="priority-header">NEAR-TERM PRIORITIES (In Progress)</div>
+                <ul style="font-size: 1.2rem; line-height: 1.8;">
+                    <li>Bulk research and lead discovery to expand deal flow</li>
+                    <li>Entrepreneur suite for founder engagement and marketing</li>
+                    <li>Agentic financial analysis (churn modeling, ARR extraction)</li>
+                    <li>Board meeting support with competitive & market research</li>
+                </ul>
+            </div>
+
+            <div class="vision-section">
+                <div class="priority-header">TWO-YEAR VISION</div>
+                <ul style="font-size: 1.2rem; line-height: 1.8;">
+                    <li>50% more time spent on high-leverage work like sourcing, IC prep, and networking</li>
+                    <li>Autonomous internal agent that understands our workflows and deadlines (AI Chief of Staff)</li>
+                </ul>
+            </div>
+            
+            <div class="vocap-brand">© 2025 Vocap Investment Partners. Confidential - for discussion purposes only.</div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" onclick="prevSlide()">← Previous</button>
+        <button class="nav-btn" onclick="nextSlide()">Next →</button>
+    </div>
+
+    <script>
+        // Create animated background particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 40;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            // Hide all slides completely
+            slides.forEach(slide => {
+                slide.classList.remove('active');
+                slide.style.display = 'none';
+            });
+            
+            // Update current slide index
+            currentSlide = (n + totalSlides) % totalSlides;
+            
+            // Show only the current slide
+            const activeSlide = slides[currentSlide];
+            activeSlide.classList.add('active');
+            activeSlide.style.display = activeSlide.classList.contains('title-slide') ? 'flex' : 'block';
+            
+            // Update progress bar with smooth animation
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Update slide counter
+            document.getElementById('slideCounter').textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Enhanced keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                showSlide(0);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                showSlide(totalSlides - 1);
+            }
+        });
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide(); // Swipe left - next slide
+                } else {
+                    prevSlide(); // Swipe right - previous slide
+                }
+            }
+        }
+
+        // Initialize
+        createParticles();
+        showSlide(0);
+
+        // Optional: Auto-advance (uncomment if desired)
+        // setInterval(nextSlide, 15000); // 15 seconds per slide
+    </script>
+</body>
+</html>
